@@ -1,16 +1,20 @@
 class MenuButtonBox {
     constructor(box,desktopOff,initColors,popColors){
+        if(window.activeMenuButton != null){window.activeMenuButton = null;}
         this.isMobile = this.checkMobile();
         this.buttonColors = [initColors[0],popColors[0]];
         this.barColors = [initColors[1],popColors[1]];
+        
         if(!this.isMobile && desktopOff){
             box.style.display = "none";
             box.showMenu = true;
         }
         else{
-            this.initButtonStyles(box,this.buttonColors);
-            this.initBars(box,this.barColors);
-            this.attachListener(box,"click",this._ev_buttonPop);
+            this._initButtonStyles(box,this.buttonColors);
+            this._initBars(box,this.barColors);
+            this.attachListener(box,"click",this._ev_togglePop);
+            this.attachListener(box,"click",this._ev_stopPropagation);
+            this.attachListener(window,"click",this._ev_unPop);
             box.showMenu = false;
         }
     }
@@ -19,7 +23,7 @@ class MenuButtonBox {
         if((W/H)>1){return false;}
         else{return true;}
     }
-    initButtonStyles(button,colors){
+    _initButtonStyles(button,colors){
         if(window.getComputedStyle(button,null).position == "static"){
             button.style.position = "relative";
         }
@@ -32,14 +36,14 @@ class MenuButtonBox {
         button.isClicked = false;
         button.transform = this.transformBars;
     }
-    initBars(button,colors){
+    _initBars(button,colors){
         var bars = [document.createElement("div"),document.createElement("div"),document.createElement("div")];
         for(var i=0;i<3;i++){
             button.appendChild(bars[i]);
         }
-        this.initBarStyles(bars,colors);
+        this._initBarStyles(bars,colors);
     }
-    initBarStyles(bars,colors){
+    _initBarStyles(bars,colors){
         for(var i=0;i<3;i++){
             bars[i].style.position = "absolute";
             bars[i].style.height = "12%";
@@ -54,7 +58,7 @@ class MenuButtonBox {
     attachListener(element,action,listenerFunction){
         element.addEventListener(action,listenerFunction,false);
     }
-    _ev_buttonPop(evt){
+    _ev_togglePop(evt){
         var button = evt.currentTarget, bars = button.children,isClicked = button.isClicked;
         if(isClicked){
             button.style.backgroundColor = button.colors[0];
@@ -63,6 +67,8 @@ class MenuButtonBox {
             }
             button.transform(bars,isClicked);
             button.isClicked = false;
+            window.activeMenuButton = null;
+            console.log("togglePop activated unPop");
         }
         else{
             button.style.backgroundColor = button.colors[1];
@@ -71,6 +77,25 @@ class MenuButtonBox {
             }
             button.transform(bars,isClicked);
             button.isClicked = true;
+            window.activeMenuButton = button;
+            console.log("togglePop activated Pop");
+        }
+    }
+    _ev_stopPropagation(evt){
+        evt.stopPropagation();
+    }
+    _ev_unPop(evt){
+        var target = evt.currentTarget, button = target.activeMenuButton;
+        if(button != null){
+            console.log("unpop trigured");
+            var bars = button.children, isClicked = button.isClicked;
+            button.style.backgroundColor = button.colors[0];
+            for(var i=0;i<3;i++){
+                bars[i].style.backgroundColor = bars[i].colors[0]
+            }
+            button.transform(bars,isClicked);
+            button.isClicked = false;
+            window.activeMenuButton = null;
         }
     }
     transformBars(bars,isClicked){
