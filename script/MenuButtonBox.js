@@ -3,11 +3,15 @@ class MenuButtonBox {
         this.isMobile = this.checkMobile();
         this.buttonColors = [initColors[0],popColors[0]];
         this.barColors = [initColors[1],popColors[1]];
-        if(!this.isMobile && desktopOff){box.style.display = "none";}
+        if(!this.isMobile && desktopOff){
+            box.style.display = "none";
+            box.showMenu = true;
+        }
         else{
             this.initButtonStyles(box,this.buttonColors);
             this.initBars(box,this.barColors);
             this.attachListener(box,"click",this._ev_buttonPop);
+            box.showMenu = false;
         }
     }
     checkMobile(){
