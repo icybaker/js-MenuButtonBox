@@ -1,17 +1,18 @@
 class MenuButtonBox {
     constructor(box,desktopOff,initColors,popColors){
-        if(window.activeMenuButton != null){window.activeMenuButton = null;}
         this.isMobile = this.checkMobile();
-        this.buttonColors = [initColors[0],popColors[0]];
-        this.barColors = [initColors[1],popColors[1]];
+        this._initProperties(box,initColors,popColors);
+        
         
         if(!this.isMobile && desktopOff){
+/*if NOT mobile (desktop) and you do want the button to be invisible*/
             box.style.display = "none";
-            box.showMenu = true;
+            box.showMenu = true;//tell DropBox list to default to visible
         }
         else{
-            this._initButtonStyles(box,this.buttonColors);
-            this._initBars(box,this.barColors);
+/* In the case of mobile, or user set desktopOff:true */
+            this._initButtonStyles(box,box.buttonColors);
+            this._initBars(box,box.barColors);
             this.attachListener(box,"click",this._ev_togglePop);
             this.attachListener(box,"click",this._ev_stopPropagation);
             this.attachListener(window,"click",this._ev_unPop);
@@ -23,35 +24,37 @@ class MenuButtonBox {
         if((W/H)>1){return false;}
         else{return true;}
     }
-    _initButtonStyles(button,colors){
-        if(window.getComputedStyle(button,null).position == "static"){
-            button.style.position = "relative";
-        }
-        if(window.getComputedStyle(button,null).height == "0px"){
-            button.style.height = "40px";
-        }
-        button.style.width = button.style.height;
-        button.style.backgroundColor = colors[0];
-        button.colors = colors;
-        button.isClicked = false;
-        button.transform = this.transformBars;
+    _initProperties(box,initColors,popColors){
+        box.buttonColors = [initColors[0],popColors[0]];
+        box.barColors = [initColors[1],popColors[1]];
+        box.menubuttonIsActive = false;
     }
-    _initBars(button,colors){
-        var bars = [document.createElement("div"),document.createElement("div"),document.createElement("div")];
+    _initButtonStyles(box,buttonColors){
+        if(window.getComputedStyle(box,null).position == "static"){
+            box.style.position = "relative";
+        }
+        if(window.getComputedStyle(box,null).height == "0px"){
+            box.style.height = "40px";
+        }
+        box.style.width = box.style.height;
+        box.style.backgroundColor = buttonColors[0];
+        box.transform = this._transform;
+    }
+    _initBars(box,barColors){
+        box.bars = [document.createElement("div"),document.createElement("div"),document.createElement("div")];
         for(var i=0;i<3;i++){
-            button.appendChild(bars[i]);
+            box.appendChild(box.bars[i]);
         }
-        this._initBarStyles(bars,colors);
+        this._initBarStyles(box.bars,barColors);
     }
-    _initBarStyles(bars,colors){
+    _initBarStyles(bars,barColors){
         for(var i=0;i<3;i++){
             bars[i].style.position = "absolute";
             bars[i].style.height = "12%";
             bars[i].style.width = "80%";
             bars[i].style.top = ((i+1)*16+i*12)+"%";
             bars[i].style.left = "10%";
-            bars[i].style.backgroundColor = colors[0];
-            bars[i].colors = colors;
+            bars[i].style.backgroundColor = barColors[0];
         }
         
     }
@@ -59,55 +62,40 @@ class MenuButtonBox {
         element.addEventListener(action,listenerFunction,false);
     }
     _ev_togglePop(evt){
-        var button = evt.currentTarget, bars = button.children,isClicked = button.isClicked;
-        if(isClicked){
-            button.style.backgroundColor = button.colors[0];
-            for(var i=0;i<3;i++){
-                bars[i].style.backgroundColor = bars[i].colors[0]
-            }
-            button.transform(bars,isClicked);
-            button.isClicked = false;
-            window.activeMenuButton = null;
-            console.log("togglePop activated unPop");
-        }
-        else{
-            button.style.backgroundColor = button.colors[1];
-            for(var i=0;i<3;i++){
-                bars[i].style.backgroundColor = bars[i].colors[1]
-            }
-            button.transform(bars,isClicked);
-            button.isClicked = true;
-            window.activeMenuButton = button;
-            console.log("togglePop activated Pop");
-        }
+        var box = evt.currentTarget, bars = box.bars, isActive = box.menubuttonIsActive;
+            box.transform(box,bars,isActive);
     }
     _ev_stopPropagation(evt){
         evt.stopPropagation();
     }
     _ev_unPop(evt){
-        var target = evt.currentTarget, button = target.activeMenuButton;
-        if(button != null){
-            console.log("unpop trigured");
-            var bars = button.children, isClicked = button.isClicked;
-            button.style.backgroundColor = button.colors[0];
-            for(var i=0;i<3;i++){
-                bars[i].style.backgroundColor = bars[i].colors[0]
-            }
-            button.transform(bars,isClicked);
-            button.isClicked = false;
-            window.activeMenuButton = null;
+        var box = evt.currentTarget.MenuButtonBox.box;
+        if(box.menubuttonIsActive){
+            box.transform(box,box.bars,box.menubuttonIsActive)
         }
     }
-    transformBars(bars,isClicked){
-        if(isClicked){
+    _transform(box,bars,isActive){
+        if(isActive){
+            box.style.backgroundColor = box.buttonColors[0];
+            for(var i=0;i<3;i++){
+                bars[i].style.backgroundColor = box.barColors[0];
+            }
+
             TweenMax.to(bars[0],.5,{rotationZ:0,transformOrigin:"50% 50% 0%"});
             TweenMax.to(bars[2],.5,{rotationZ:0,transformOrigin:"50% 50% 0%"});
 
             TweenMax.to(bars[0],.5,{top:"16%"}).delay(.5);
             TweenMax.set(bars[1],{display:"block"}).delay(.5);
             TweenMax.to(bars[2],.5,{top:"72%"}).delay(.5);
+
+            box.menubuttonIsActive = false;
         }
         else{
+            box.style.backgroundColor = box.buttonColors[1];
+            for(var i=0;i<3;i++){
+                bars[i].style.backgroundColor = box.barColors[1];
+            }
+
             TweenMax.to(bars[0],.5,{top:"44%"});
             TweenMax.set(bars[1],{display:"none"});
             TweenMax.to(bars[2],.5,{top:"44%"});
@@ -115,16 +103,48 @@ class MenuButtonBox {
             TweenMax.to(bars[0],.5,{rotationZ:45,transformOrigin:"50% 50% 0%"}).delay(.5);
             TweenMax.to(bars[2],.5,{rotationZ:-45,transformOrigin:"50% 50% 0%"}).delay(.5);
             
+            box.menubuttonIsActive = true;
         }
     }
-
-    static initMenuButtonBox(selector,{desktopOff = true,initColors = ["transparent","darkgray"],popColors=["black","white"]}={}){
+    static initMenuButtonBox(selector,{desktopOff = true,buttonColor1 = "transparent",buttonColor2 = "black",barColor1 = "darkgray",barColor2 = "white",initColors = [buttonColor1,barColor1],popColors=[buttonColor2,barColor2]}={}){
         var box = document.querySelectorAll(selector)[0];
         var menuButtonBox = new MenuButtonBox(box,desktopOff,initColors,popColors);
+        menuButtonBox.box = box;
+        window.MenuButtonBox = menuButtonBox;
         return menuButtonBox;
     }
     static _doc(){
-        var docString = ``;
+        var docString = `The MenuButtonBox is the classic 3 bar menu button that appears on
+        mobile sites in place of the navigation items. The default 
+        MenuButtonBox has 3 gray bars and a transparent background; when
+        clicked it will transform the bars into a white X shape and switch
+        the background to black. This of course may be changed via optional
+        parameters "initColors" and "popColors" as with the PopBox class.
+        The perceptive reader may wonder why the PopBox class isn't simply
+        applied to the MenuButtonBox class; the reason is becasue the PopBox
+        class expects an element containing text and manipulates the color,
+        and background-color properties of the element. The MenuButtonBox 
+        must instead manipulate the background color of parent and children
+        elements, so the algorithm is just so different that it's worth it
+        to simply build in the Pop functionality.
+        
+        A key ingradient to the MenuButtonBox is still missing though, did
+        you notice? The menu! Unlike the case of the PopBox incompatibillity,
+        this is a perfect chance to apply the DropBox object, where the 
+        MenuButtonBox is the db-label element. 
+        E.g.
+           <div class="drop-box">
+                <div class="menu-button-box"></div>
+                <div class="db-list">
+                    <div class="db-list-item">
+                    this is a db-list-item
+                    </div>
+                </div>
+            </div>
+        Using this method, initialize the MenuButtonBox first, because remember
+        the DropBox adjusts its dimensions to the dimensions of its label. so
+        it is imperitive that the label (or whatever is serving in the label 
+        position) has its dimensions set before initializing the DropBox.`;
         console.log(docString);
         return docString;
     }
