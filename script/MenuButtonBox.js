@@ -74,7 +74,8 @@ class MenuButtonBox {
             box.transform(box,box.bars,box.menubuttonIsActive)
         }
     }
-    _transform(box,bars,isActive){
+    _transform(box,isActive){
+        var bars = box.bars;
         if(isActive){
             box.style.backgroundColor = box.buttonColors[0];
             for(var i=0;i<3;i++){
