@@ -63,7 +63,7 @@ class MenuButtonBox {
     }
     _ev_togglePop(evt){
         var box = evt.currentTarget, bars = box.bars, isActive = box.menubuttonIsActive;
-            box.transform(box,bars,isActive);
+            box.transform(box,isActive);
     }
     _ev_stopPropagation(evt){
         evt.stopPropagation();
@@ -71,7 +71,7 @@ class MenuButtonBox {
     _ev_unPop(evt){
         var box = evt.currentTarget.MenuButtonBox.box;
         if(box.menubuttonIsActive){
-            box.transform(box,box.bars,box.menubuttonIsActive)
+            box.transform(box,box.menubuttonIsActive)
         }
     }
     _transform(box,isActive){
