@@ -13,9 +13,8 @@ class MenuButtonBox {
 /* In the case of mobile, or user set desktopOff:true */
             this._initButtonStyles(box,box.buttonColors);
             this._initBars(box,box.barColors);
-            this.attachListener(box,"click",this._ev_togglePop);
-            this.attachListener(box,"click",this._ev_stopPropagation);
-            this.attachListener(window,"click",this._ev_unPop);
+            MenuButtonBox.attachListener(box,"click",this._ev_togglePop);
+            MenuButtonBox.attachListener(box,"click",this._ev_stopPropagation);
             box.showMenu = false;
         }
     }
@@ -38,7 +37,7 @@ class MenuButtonBox {
         }
         box.style.width = box.style.height;
         box.style.backgroundColor = buttonColors[0];
-        box.transform = this._transform;
+        box.menuButtonTransform = this._transform;
     }
     _initBars(box,barColors){
         box.bars = [document.createElement("div"),document.createElement("div"),document.createElement("div")];
@@ -58,21 +57,26 @@ class MenuButtonBox {
         }
         
     }
-    attachListener(element,action,listenerFunction){
+    static attachListener(element,action,listenerFunction){
         element.addEventListener(action,listenerFunction,false);
     }
     _ev_togglePop(evt){
         var box = evt.currentTarget, bars = box.bars, isActive = box.menubuttonIsActive;
-            box.transform(box,isActive);
+            box.menuButtonTransform(box,isActive);
     }
     _ev_stopPropagation(evt){
         evt.stopPropagation();
     }
-    _ev_unPop(evt){
-        var box = evt.currentTarget.MenuButtonBox.box;
-        if(box.menubuttonIsActive){
-            box.transform(box,box.menubuttonIsActive)
+    static _ev_unpopAll(evt){
+        var menuButtonBoxes = evt.currentTarget.MenuButtonBoxes, numBoxes = menuButtonBoxes.length, box;
+        for(var i=0;i<numBoxes;i++){
+            box = menuButtonBoxes[i].box;
+            if(box.menubuttonIsActive){
+            box.menuButtonTransform(box,box.menubuttonIsActive)
+            } 
         }
+
+        
     }
     _transform(box,isActive){
         var bars = box.bars;
@@ -108,11 +112,20 @@ class MenuButtonBox {
         }
     }
     static initMenuButtonBox(selector,{desktopOff = true,buttonColor1 = "transparent",buttonColor2 = "black",barColor1 = "darkgray",barColor2 = "white",initColors = [buttonColor1,barColor1],popColors=[buttonColor2,barColor2]}={}){
-        var box = document.querySelectorAll(selector)[0];
-        var menuButtonBox = new MenuButtonBox(box,desktopOff,initColors,popColors);
-        menuButtonBox.box = box;
-        window.MenuButtonBox = menuButtonBox;
-        return menuButtonBox;
+        var boxes = document.querySelectorAll(selector), numBoxes = boxes.length;
+        var menuButtonBoxes = new Array(numBoxes);
+        if(window.MenuButtonBoxes == undefined){window.MenuButtonBoxes = [];} 
+        for(var i=0;i<numBoxes;i++){
+            menuButtonBoxes[i] = new MenuButtonBox(boxes[i],desktopOff,initColors,popColors);
+            menuButtonBoxes[i].box = boxes[i];
+            window.MenuButtonBoxes.push(menuButtonBoxes[i]);
+        }
+        if(window.MenuButtonBoxes.listenerAttached == undefined){
+            MenuButtonBox.attachListener(window,"click",MenuButtonBox._ev_unpopAll);
+            window.MenuButtonBoxes.listenerAttached = true;            
+        }
+
+        return menuButtonBoxes;
     }
     static _doc(){
         var docString = `The MenuButtonBox is the classic 3 bar menu button that appears on
